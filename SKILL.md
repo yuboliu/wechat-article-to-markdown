@@ -94,17 +94,22 @@ Output files:
 beautifulsoup4 / playwright）。
 
 ```bash
-# SK 指向 skill 目录（Windows 下即 C:/Users/<你>/.workbuddy/skills/wechat-article-to-markdown）
-SK="$HOME/.workbuddy/skills/wechat-article-to-markdown"
-"$SK/.venv/Scripts/python.exe" "$SK/wechat_article_to_markdown.py" "<URL>" -o "<输出根目录>"
+# 从 skill 目录用「相对路径」调用，跨平台最稳
+cd ~/.workbuddy/skills/wechat-article-to-markdown
+./.venv/Scripts/python.exe wechat_article_to_markdown.py "<URL>" -o "<输出根目录>"
 ```
 
 只想走最快的非浏览器模式：
 
 ```bash
-"$SK/.venv/Scripts/python.exe" "$SK/wechat_article_to_markdown.py" "<URL>" \
+./.venv/Scripts/python.exe wechat_article_to_markdown.py "<URL>" \
   -o "<输出根目录>" --mode requests
 ```
+
+> ⚠️ **Windows / Git Bash 注意**：别写成 `SK="$HOME/..."` 再把 `"$SK/xxx.py"` 当参数传给 Python ——
+> `$HOME` 会展开成 `/c/Users/...`（MSYS 风格），而原生 Windows Python 不认这种路径，会报
+> `can't open file 'c:\c\Users\...': [Errno 2] No such file or directory`。
+> 用上面的 `cd` + 相对路径写法，或把路径写成 `C:/Users/...`，或用 `cygpath -w` 转换。
 
 > ⚠️ **本机 camoufox 二进制无法被自动化驱动**（2026-09-23 定位，勿再重复试"换版本"）。
 > 症状：浏览器进程能起，但 chrome window 初始化不完成，Juggler 15s 后抛
