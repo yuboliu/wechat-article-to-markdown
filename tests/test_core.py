@@ -4,6 +4,7 @@ from bs4 import BeautifulSoup
 from wechat_article_to_markdown import (
     convert_to_markdown,
     extract_publish_time,
+    extract_source_url,
     format_timestamp,
     normalize_wechat_url,
     process_content,
@@ -76,6 +77,23 @@ def test_extract_publish_time_supports_multiple_patterns() -> None:
     assert extract_publish_time(f'create_time:"{ts}"') == expected
     assert extract_publish_time(f"create_time = {ts}") == expected
     assert extract_publish_time(f"create_time:JsDecode('{ts}')") == expected
+
+
+def test_extract_source_url_supports_both_quote_styles() -> None:
+    url = "https://mp.weixin.qq.com/s/tKlag40gOMkeELuMtT-vmw"
+
+    assert extract_source_url(f'var msg_link = "{url}"') == url
+    assert extract_source_url(f"var msg_link = '{url}'") == url
+
+
+def test_extract_source_url_decodes_html_entities() -> None:
+    html = 'var msg_link = "https://mp.weixin.qq.com/s?a=1&amp;b=2"'
+
+    assert extract_source_url(html) == "https://mp.weixin.qq.com/s?a=1&b=2"
+
+
+def test_extract_source_url_returns_empty_when_absent() -> None:
+    assert extract_source_url("<html><body>no link here</body></html>") == ""
 
 
 def test_replace_image_urls_handles_parentheses() -> None:

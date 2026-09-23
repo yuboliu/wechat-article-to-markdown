@@ -6,11 +6,13 @@ Fetch WeChat Official Account articles and convert them to clean Markdown.
 
 ## Features
 
-- Anti-detection fetching with Camoufox
+- Two-tier fetching: plain HTTP (`requests`) first, browser only when blocked
+- Browser fallback via Camoufox (anti-detection) or Chromium
 - Extract article metadata (title, account name, publish time, source URL)
 - Convert WeChat article HTML to Markdown
 - Download article images to local `images/` and rewrite links
 - Handle WeChat `code-snippet` blocks with language fences
+- Promote WeChat styled-block headings (`<section style="font-weight:bold">`) to `##`
 
 ## Installation
 
@@ -54,6 +56,36 @@ output/
         ├── img_002.png
         └── ...
 ```
+
+### Fetch modes
+
+By default the tool is **two-tier**: it fetches the HTML with `requests` first
+(no browser), and only escalates to a browser when the response is not a normal
+article page (missing `#js_content` / `#activity-name`, HTTP 403/429/5xx,
+anti-bot markers, abnormally small body).
+
+```bash
+# Default: plain HTTP, escalate to browser only if blocked
+wechat-article-to-markdown "https://mp.weixin.qq.com/s/xxxxxxxx"
+
+# Force plain HTTP only (fastest, no browser); fail fast if blocked
+wechat-article-to-markdown "https://mp.weixin.qq.com/s/xxxxxxxx" --mode requests
+
+# Force browser only (legacy behaviour)
+wechat-article-to-markdown "https://mp.weixin.qq.com/s/xxxxxxxx" --mode browser
+
+# Pick the browser engine used for the fallback (default: camoufox)
+wechat-article-to-markdown "https://mp.weixin.qq.com/s/xxxxxxxx" --browser-engine chromium
+
+# Restricted article: attach cookies / go through a proxy
+wechat-article-to-markdown "https://mp.weixin.qq.com/s/xxxxxxxx" --cookie "k=v; k2=v2" --proxy http://127.0.0.1:7890
+
+# Save the raw HTML, then re-parse it offline later
+wechat-article-to-markdown "https://mp.weixin.qq.com/s/xxxxxxxx" --save-html raw.html
+wechat-article-to-markdown --html-file raw.html -o output
+```
+
+Both paths produce **byte-identical** Markdown, so downstream tooling needs no changes.
 
 
 ## Testing
@@ -121,11 +153,13 @@ If not set, workflow falls back to `https://mp.weixin.qq.com/s/Y7dyRC7CJ09miHWU6
 
 ## 功能特性
 
-- 使用 Camoufox 进行反检测抓取
+- 两级抓取：默认 `requests` 直取，命中风控才升浏览器
+- 浏览器兜底支持 Camoufox（反检测）与 Chromium
 - 提取标题、公众号名称、发布时间、原文链接
 - 将微信公众号文章 HTML 转换为 Markdown
 - 下载图片到本地 `images/` 并自动替换链接
 - 处理微信 `code-snippet` 代码块并保留语言标识
+- 把微信样式块小标题（`<section style="font-weight:bold">`）提升为 `##`
 
 ## 安装
 
@@ -142,6 +176,35 @@ pipx install wechat-article-to-markdown
 ```bash
 wechat-article-to-markdown "https://mp.weixin.qq.com/s/xxxxxxxx"
 ```
+
+### 抓取模式
+
+默认是**两级策略**：先用 `requests` 直取 HTML，只有当响应不是正常文章页
+（缺 `#js_content` / `#activity-name`、HTTP 403/429/5xx、命中风控特征串、响应体异常小）
+时才自动升到浏览器模式重抓。
+
+| 模式 | 行为 |
+| --- | --- |
+| `--mode auto`（默认） | 先 requests；命中风控才升浏览器 |
+| `--mode requests` | 只用 requests，异常即失败（最快） |
+| `--mode browser` | 只用浏览器（旧版行为） |
+
+```bash
+# 强制非浏览器模式（最快）
+wechat-article-to-markdown "<URL>" --mode requests
+
+# 浏览器兜底换用 Chromium
+wechat-article-to-markdown "<URL>" --browser-engine chromium
+
+# 受限文章：带 Cookie / 走代理
+wechat-article-to-markdown "<URL>" --cookie "k=v; k2=v2" --proxy http://127.0.0.1:7890
+
+# 先存原始 HTML，之后离线复跑
+wechat-article-to-markdown "<URL>" --save-html raw.html
+wechat-article-to-markdown --html-file raw.html -o output
+```
+
+两种模式**产物逐字节一致**，下游工具无需改动。
 
 ## 作为 AI Agent Skill 使用
 

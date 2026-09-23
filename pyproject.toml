@@ -17,6 +17,7 @@ dependencies = [
   "markdownify",
   "beautifulsoup4",
   "httpx",
+  "requests",
 ]
 keywords = ["wechat", "markdown", "crawler", "camoufox"]
 classifiers = [
